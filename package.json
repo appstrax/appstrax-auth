@@ -4,6 +4,7 @@
   "description": "The @appstrax/auth npm library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "private": false,
   "scripts": {
     "build": "tsc",
     "test": "jest --config jestconfig.json",
@@ -17,7 +18,10 @@
     "type": "git",
     "url": "git+https://github.com/appstrax/appstrax-auth.git"
   },
-  "keywords": ["Appstrax", "Authentication"],
+  "keywords": [
+    "Appstrax",
+    "Authentication"
+  ],
   "author": "Appstrax Technology",
   "license": "ISC",
   "bugs": {
@@ -35,5 +39,6 @@
   },
   "files": [
     "dist/**/*"
-  ]
+  ],
+  "dependencies": {}
 }
