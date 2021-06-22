@@ -75,4 +75,8 @@ export class AuthService {
   public logout() {
     this.onAuthStateChanged(null);
   }
+
+  public init(baseUrl: string) {
+    Services.instance().setBaseUrl(baseUrl);
+  };
 }

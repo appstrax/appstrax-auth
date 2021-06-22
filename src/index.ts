@@ -10,9 +10,6 @@ import {
 
 const services = Services.instance();
 const auth = services.authService;
-const init = (baseUrl: string) => {
-  services.setBaseUrl(baseUrl);
-};
 
 export {
   LoginDto,
@@ -20,6 +17,5 @@ export {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
-  auth,
-  init
+  auth
 }
