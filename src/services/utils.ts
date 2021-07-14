@@ -1,6 +1,8 @@
+import { AuthTokensDto } from './../dtos/auth-dtos';
 
 
 export class Utils {
+
   public isTokenExpired(token: string, offsetSeconds = 0): boolean {
     const expirationDate = this.getJWTExpirationDate(token);
     if (!expirationDate) {
@@ -52,5 +54,14 @@ export class Utils {
     expirationDate.setUTCSeconds(decoded.exp);
 
     return expirationDate;
+  }
+
+  pathJoin(...parts) {
+    const separator = '/';
+    const replace = new RegExp(separator + '{1,}', 'g');
+    return parts.join(separator)
+      .replace(replace, separator)
+      .replace('http:/', 'http://')
+      .replace('https:/', 'https://');
   }
 }

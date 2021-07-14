@@ -8,6 +8,8 @@ import {
   ChangePasswordDto,
 } from './dtos/auth-dtos';
 
+import { User } from './models/user';
+
 const services = Services.instance();
 const auth = services.authService;
 
@@ -17,5 +19,6 @@ export {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  User,
   auth
 }

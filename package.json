@@ -1,7 +1,7 @@
 {
   "name": "@appstrax/auth",
-  "version": "1.0.1",
-  "description": "The @appstrax/auth npm library",
+  "version": "0.0.3",
+  "description": "The @appstrax/auth frontend javascript library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "private": false,

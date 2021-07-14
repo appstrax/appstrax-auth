@@ -9,6 +9,11 @@ export interface RegisterDto {
   data: any;
 }
 
+export interface AuthTokensDto {
+  token: string;
+  refreshToken: string;
+}
+
 export interface ForgotPasswordDto {
   email: string;
 }
@@ -22,4 +27,8 @@ export interface ResetPasswordDto {
 export interface ChangePasswordDto {
   password: string;
   newPassword: string;
+}
+
+export interface MessageDto {
+  message: string;
 }
