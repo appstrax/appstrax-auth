@@ -6,6 +6,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  MessageDto,
 } from './dtos/auth-dtos';
 
 import { User } from './models/user';
@@ -19,6 +20,7 @@ export {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  MessageDto,
   User,
   auth
 }
