@@ -30,7 +30,7 @@ export class AuthService {
     // if the auth token has expired, try refresh the token
     if (tokens && this.utils.isTokenExpired(tokens.token)) {
       try {
-        tokens = await this.refreshTokens();
+        tokens = await this.refreshTokens(tokens.refreshToken);
       } catch (err) {
         tokens = null;
       }
@@ -43,9 +43,9 @@ export class AuthService {
     this.loading = false;
   }
 
-  private refreshTokens(): Promise<TokensDto> {
+  private refreshTokens(refreshToken: string): Promise<TokensDto> {
     const url = this.getAuthUrl('refresh-token');
-    return this.http.post(url, { refreshToken: this.tokens.refreshToken });
+    return this.http.post(url, { refreshToken });
   }
 
   private getAuthUrl(extension: string): string {
@@ -84,7 +84,7 @@ export class AuthService {
 
   public async getRefreshedToken(): Promise<string> {
     try {
-      const tokens: TokensDto = await this.refreshTokens();
+      const tokens: TokensDto = await this.refreshTokens(this.tokens.refreshToken);
       await this.onAuthStateChanged(tokens);
       return this.tokens.token;
     } catch (err) {
