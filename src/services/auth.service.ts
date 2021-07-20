@@ -4,7 +4,7 @@ import { StorageService } from './storage.service';
 import { HttpService } from './http.service';
 
 import {
-  AuthTokensDto, ForgotPasswordDto, LoginDto, RegisterDto,
+  TokensDto, ForgotPasswordDto, LoginDto, RegisterDto,
   ResetPasswordDto, MessageDto, ChangePasswordDto
 } from '../dtos/auth-dtos';
 import { User } from '../models/user';
@@ -12,18 +12,18 @@ import { User } from '../models/user';
 export class AuthService {
 
   private user: User = null;
-  private tokens: AuthTokensDto = null;
+  private tokens: TokensDto = null;
 
   constructor(
     private utils: Utils,
     private storageService: StorageService,
     private http: HttpService
   ) {
-    const tokens = this.storageService.getAuthTokens();
+    const tokens = this.storageService.getTokens();
     this.onAuthStateChanged(tokens);
   }
 
-  private async onAuthStateChanged(tokens: AuthTokensDto) {
+  private async onAuthStateChanged(tokens: TokensDto) {
     // if the auth token has expired, try refresh the token
     if (tokens && this.utils.isTokenExpired(tokens.token)) {
       try {
@@ -35,10 +35,10 @@ export class AuthService {
 
     this.tokens = tokens;
     this.user = tokens ? this.utils.decodeToken(tokens.token) : null;
-    this.storageService.setAuthTokens(tokens);
+    this.storageService.setTokens(tokens);
   }
 
-  public async refreshTokens(): Promise<AuthTokensDto> {
+  private async refreshTokens(): Promise<TokensDto> {
     const url = this.getAuthUrl('refresh-token');
     return await this.http.post(url, this.tokens);
   }
@@ -56,7 +56,7 @@ export class AuthService {
   public async register(registerDto: RegisterDto): Promise<User> {
     try {
       const url = this.getAuthUrl('register');
-      const tokens: AuthTokensDto = await this.http.post(url, registerDto);
+      const tokens: TokensDto = await this.http.post(url, registerDto);
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
@@ -68,7 +68,7 @@ export class AuthService {
   public async login(loginDto: LoginDto): Promise<User> {
     try {
       const url = this.getAuthUrl('login');
-      const tokens: AuthTokensDto = await this.http.post(url, loginDto);
+      const tokens: TokensDto = await this.http.post(url, loginDto);
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
@@ -79,7 +79,7 @@ export class AuthService {
 
   public async getRefreshedToken(): Promise<string> {
     try {
-      const tokens: AuthTokensDto = await this.refreshTokens();
+      const tokens: TokensDto = await this.refreshTokens();
       await this.onAuthStateChanged(tokens);
       return this.tokens.token;
     } catch (err) {
@@ -103,7 +103,7 @@ export class AuthService {
 
   public async saveUserData(data: any): Promise<User> {
     const url = this.getUserUrl('data');
-    const tokens: AuthTokensDto = await this.http.post(url, data, this.getAuthToken());
+    const tokens: TokensDto = await this.http.post(url, data, this.getAuthToken());
     await this.onAuthStateChanged(tokens);
     return this.user;
   }

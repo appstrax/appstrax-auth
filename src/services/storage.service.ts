@@ -1,4 +1,4 @@
-import { AuthTokensDto } from '../dtos/auth-dtos';
+import { TokensDto } from '../dtos/auth-dtos';
 
 export class StorageService {
 
@@ -30,14 +30,14 @@ export class StorageService {
     }
   }
 
-  public getAuthTokens(): AuthTokensDto {
+  public getTokens(): TokensDto {
     const token = this.getItem(this.refreshTokenKey);
     const refreshToken = this.getItem(this.refreshTokenKey);
     if (!token || !refreshToken) { return null; }
     return { token, refreshToken };
   }
 
-  public setAuthTokens(auth: AuthTokensDto) {
+  public setTokens(auth: TokensDto) {
     if (!auth || !auth.token || !auth.refreshToken) {
       this.clear();
     } else {

@@ -1,5 +1,3 @@
-import { AuthTokensDto } from './../dtos/auth-dtos';
-
 
 export class Utils {
 

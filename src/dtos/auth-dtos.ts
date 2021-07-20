@@ -9,7 +9,7 @@ export interface RegisterDto {
   data: any;
 }
 
-export interface AuthTokensDto {
+export interface TokensDto {
   token: string;
   refreshToken: string;
 }
