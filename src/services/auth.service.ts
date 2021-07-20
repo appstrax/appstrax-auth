@@ -38,9 +38,9 @@ export class AuthService {
     this.storageService.setTokens(tokens);
   }
 
-  private async refreshTokens(): Promise<TokensDto> {
+  private refreshTokens(): Promise<TokensDto> {
     const url = this.getAuthUrl('refresh-token');
-    return await this.http.post(url, this.tokens);
+    return this.http.post(url, { refreshToken: this.tokens.refreshToken });
   }
 
   private getAuthUrl(extension: string): string {
@@ -113,7 +113,7 @@ export class AuthService {
   }
 
   public getAuthToken(): string {
-    return this.tokens.token;
+    return this.tokens ? this.tokens.token : null;
   }
 
   public getUser(): User {
