@@ -10,11 +10,26 @@ export class HttpService {
       },
       body: JSON.stringify(body)
     });
-    return response.json();
+
+    if (response.status >= 200 && response.status <= 299) {
+      return response.json();
+    } else {
+      throw new HttpError(await response.text(), response.status);
+    }
   }
 
   private getAuthHeader(token: string): any {
     if (!token) { return {}; }
     return { 'Authorization': 'Bearer ' + token };
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
   }
 }
