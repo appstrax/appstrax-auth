@@ -3,39 +3,51 @@ import { Services } from './services';
 export class HttpService {
 
   public get(url: string, headers: any = {}): Promise<any> {
-    return this.doFetch(url, headers, 'GET');
+    return this.performFetch(url, headers, 'GET');
   }
 
   public post(url: string, body: any, headers: any = {}): Promise<any> {
-    return this.doFetch(url, headers, 'POST', body);
+    return this.performFetch(url, headers, 'POST', body);
   }
 
   public patch(url: string, body: any, headers: any = {}): Promise<any> {
-    return this.doFetch(url, headers, 'PATCH', body);
+    return this.performFetch(url, headers, 'PATCH', body);
   }
 
   public put(url: string, body: any, headers: any = {}): Promise<any> {
-    return this.doFetch(url, headers, 'PUT', body);
+    return this.performFetch(url, headers, 'PUT', body);
   }
 
   public delete(url: string, headers: any = {}): Promise<any> {
-    return this.doFetch(url, headers, 'DELETE');
+    return this.performFetch(url, headers, 'DELETE');
   }
 
-  private async doFetch(
-    url: string,
-    headers: any,
-    method: string,
-    body: any = null
+  private async performFetch(
+    url: string, headers: any, method: string, body: any = null
   ): Promise<any> {
 
-    const response = await fetch(url, {
+    let response = await this.tryFetch(url, headers, method, body);
+
+    // check if the token expired, refresh the token and try again
+    if (response.status === 401) {
+      const err = await response.text();
+      if (err === 'Token Expired') {
+        await Services.instance().authService.getRefreshedToken();
+        response = await this.tryFetch(url, headers, method, body);
+      }
+    }
+
+    return this.handleResponse(response);
+  }
+
+  private async tryFetch(
+    url: string, headers: any, method: string, body: any = null
+  ): Promise<Response> {
+    return fetch(url, {
       method,
       headers: this.getHeaders(headers),
       body: body ? JSON.stringify(body) : null
     });
-
-    return this.handleResponse(response);
   }
 
   private async handleResponse(response: Response): Promise<any> {
