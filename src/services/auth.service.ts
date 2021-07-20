@@ -13,6 +13,7 @@ export class AuthService {
 
   private user: User = null;
   private tokens: TokensDto = null;
+  private loading: boolean = false;
 
   constructor(
     private utils: Utils,
@@ -24,6 +25,8 @@ export class AuthService {
   }
 
   private async onAuthStateChanged(tokens: TokensDto) {
+    this.loading = true;
+
     // if the auth token has expired, try refresh the token
     if (tokens && this.utils.isTokenExpired(tokens.token)) {
       try {
@@ -36,6 +39,8 @@ export class AuthService {
     this.tokens = tokens;
     this.user = tokens ? this.utils.decodeToken(tokens.token) : null;
     this.storageService.setTokens(tokens);
+
+    this.loading = false;
   }
 
   private refreshTokens(): Promise<TokensDto> {
@@ -108,8 +113,13 @@ export class AuthService {
     return this.user;
   }
 
-  public isAuthenticated(): boolean {
+  public async isAuthenticated(): Promise<boolean> {
+    while (this.loading) { await this.sleep(50); }
     return this.user != null;
+  }
+
+  private sleep(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
 
   public getAuthToken(): string {
