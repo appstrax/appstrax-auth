@@ -52,9 +52,20 @@ export class HttpService {
 
   private async handleResponse(response: Response): Promise<any> {
     if (response.status >= 200 && response.status <= 299) {
-      return response.json();
+      if (parseInt(response.headers.get("Content-Length"), 10)) {
+        return response.json();
+      } else {
+        return null;
+      }
     } else {
-      throw new HttpError(await response.text(), response.status);
+      if (parseInt(response.headers.get("Content-Length"), 10)) {
+        throw new HttpError(await response.text(), response.status);
+      } else {
+        throw new HttpError(
+          'Something went wrong, please try again or contact your system administrator'
+          , response.status);
+      }
+
     }
   }
 
