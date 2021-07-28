@@ -31,7 +31,7 @@ export class StorageService {
   }
 
   public getTokens(): TokensDto {
-    const token = this.getItem(this.refreshTokenKey);
+    const token = this.getItem(this.authTokenKey);
     const refreshToken = this.getItem(this.refreshTokenKey);
     if (!token || !refreshToken) { return null; }
     return { token, refreshToken };
