@@ -1,6 +1,6 @@
 {
   "name": "@appstrax/auth",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "The @appstrax/auth frontend javascript library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

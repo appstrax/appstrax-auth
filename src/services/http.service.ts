@@ -28,16 +28,23 @@ export class HttpService {
 
     let response = await this.tryFetch(url, headers, method, body);
 
+    let status = response.status;
+    let content = await this.getContent(response);
+
     // check if the token expired, refresh the token and try again
-    if (response.status === 401) {
-      const err = await response.text();
-      if (err === 'Token Expired') {
-        await Services.instance().authService.getRefreshedToken();
-        response = await this.tryFetch(url, headers, method, body);
-      }
+    if (status === 401 && content === 'Token Expired') {
+      await Services.instance().authService.getRefreshedToken();
+      response = await this.tryFetch(url, headers, method, body);
+
+      status = response.status;
+      content = await this.getContent(response);
     }
 
-    return this.handleResponse(response);
+    if (this.isSuccessful(status)) {
+      return content;
+    } else {
+      return this.throwError(content, status);
+    }
   }
 
   private async tryFetch(
@@ -48,22 +55,6 @@ export class HttpService {
       headers: this.getHeaders(headers),
       body: body ? JSON.stringify(body) : null
     });
-  }
-
-  private async handleResponse(response: Response): Promise<any> {
-    if (this.isSuccessful(response)) {
-      return this.getContent(response);
-    } else {
-      return this.throwError(response);
-    }
-  }
-
-  private isSuccessful(response: Response): boolean {
-    return response.status >= 200 && response.status <= 299;
-  }
-
-  private responseHasContent(response: Response): boolean {
-    return response.headers.get("Content-Length") != '0';
   }
 
   private async getContent(response: Response): Promise<any> {
@@ -79,23 +70,24 @@ export class HttpService {
     }
   }
 
-  private async throwError(response: Response): Promise<void> {
+  private responseHasContent(response: Response): boolean {
+    // tslint:disable-next-line: triple-equals
+    return response.headers.get("Content-Length") != '0';
+  }
 
-    try {
-      const content = await this.getContent(response);
-      if (content) {
-        throw new HttpError(content, response.status)
-      }
-    } catch (err) {
-      //
+  private isSuccessful(status: number): boolean {
+    return status >= 200 && status <= 299;
+  }
+
+  private throwError(content: any, status: number): Promise<void> {
+    if (content) {
+      throw new HttpError(content, status)
     }
 
     const err = `Something went wrong, 
     please try again or contact your system administrator`;
-    throw new HttpError(err, response.status);
+    throw new HttpError(err, status);
   }
-
-
 
   private getHeaders(additional: any): any {
     const token = Services.instance().authService.getAuthToken();
