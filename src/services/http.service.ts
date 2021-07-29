@@ -51,23 +51,51 @@ export class HttpService {
   }
 
   private async handleResponse(response: Response): Promise<any> {
-    if (response.status >= 200 && response.status <= 299) {
-      if (parseInt(response.headers.get("Content-Length"), 10)) {
-        return response.json();
-      } else {
-        return null;
-      }
+    if (this.isSuccessful(response)) {
+      return this.getContent(response);
     } else {
-      if (parseInt(response.headers.get("Content-Length"), 10)) {
-        throw new HttpError(await response.text(), response.status);
-      } else {
-        throw new HttpError(
-          'Something went wrong, please try again or contact your system administrator'
-          , response.status);
-      }
-
+      return this.throwError(response);
     }
   }
+
+  private isSuccessful(response: Response): boolean {
+    return response.status >= 200 && response.status <= 299;
+  }
+
+  private responseHasContent(response: Response): boolean {
+    return response.headers.get("Content-Length") != '0';
+  }
+
+  private async getContent(response: Response): Promise<any> {
+    if (!this.responseHasContent(response)) {
+      return null;
+    }
+
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      return text;
+    }
+  }
+
+  private async throwError(response: Response): Promise<void> {
+
+    try {
+      const content = await this.getContent(response);
+      if (content) {
+        throw new HttpError(content, response.status)
+      }
+    } catch (err) {
+      //
+    }
+
+    const err = `Something went wrong, 
+    please try again or contact your system administrator`;
+    throw new HttpError(err, response.status);
+  }
+
+
 
   private getHeaders(additional: any): any {
     const token = Services.instance().authService.getAuthToken();
