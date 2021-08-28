@@ -12,7 +12,7 @@ export class Services {
   public httpService: HttpService;
   public authService: AuthService;
 
-  private baseUrl: string = '';
+  private baseUrl = '';
 
   public static instance(): Services {
     if (!this._instance) { this._instance = new this(); }

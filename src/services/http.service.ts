@@ -72,7 +72,7 @@ export class HttpService {
 
   private responseHasContent(response: Response): boolean {
     // tslint:disable-next-line: triple-equals
-    return response.headers.get("Content-Length") != '0';
+    return response.headers.get('Content-Length') != '0';
   }
 
   private isSuccessful(status: number): boolean {

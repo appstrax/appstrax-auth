@@ -13,7 +13,7 @@ export class AuthService {
 
   private user: User = null;
   private tokens: TokensDto = null;
-  private loading: boolean = false;
+  private loading = false;
 
   constructor(
     private utils: Utils,
@@ -136,5 +136,5 @@ export class AuthService {
 
   public init(baseUrl: string) {
     Services.instance().setBaseUrl(baseUrl);
-  };
+  }
 }
