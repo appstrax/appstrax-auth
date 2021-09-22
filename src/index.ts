@@ -14,6 +14,7 @@ import { User } from './models/user';
 const services = Services.instance();
 const auth = services.authService;
 const http = services.httpService;
+const users = services.userService;
 
 export {
   LoginDto,
@@ -24,5 +25,6 @@ export {
   MessageDto,
   User,
   auth,
+  users,
   http,
 }

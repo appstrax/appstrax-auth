@@ -1,6 +1,7 @@
 import { AuthService } from './auth.service';
 import { HttpService } from './http.service';
 import { StorageService } from './storage.service';
+import { UserService } from './user.service';
 import { Utils } from './utils';
 
 export class Services {
@@ -11,6 +12,7 @@ export class Services {
   public storageService: StorageService;
   public httpService: HttpService;
   public authService: AuthService;
+  public userService: UserService;
 
   private baseUrl = '';
 
@@ -24,6 +26,7 @@ export class Services {
     this.storageService = new StorageService();
     this.httpService = new HttpService();
     this.authService = new AuthService(this.utils, this.storageService, this.httpService);
+    this.userService = new UserService(this.utils, this.httpService);
   }
 
   setBaseUrl(url: string) {

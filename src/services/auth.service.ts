@@ -103,12 +103,12 @@ export class AuthService {
 
   public async changePassword(changePassword: ChangePasswordDto): Promise<MessageDto> {
     const url = this.getUserUrl('change-password');
-    return await this.http.post(url, changePassword, this.getAuthToken());
+    return await this.http.post(url, changePassword);
   }
 
   public async saveUserData(data: any): Promise<User> {
     const url = this.getUserUrl('data');
-    const tokens: TokensDto = await this.http.post(url, data, this.getAuthToken());
+    const tokens: TokensDto = await this.http.post(url, data);
     await this.onAuthStateChanged(tokens);
     return this.user;
   }
@@ -130,7 +130,8 @@ export class AuthService {
     return this.user;
   }
 
-  public logout() {
+  public async logout(): Promise<void> {
+    await this.http.post(this.getUserUrl('logout'), {});
     this.onAuthStateChanged(null);
   }
 
