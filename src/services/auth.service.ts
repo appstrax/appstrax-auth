@@ -10,7 +10,6 @@ import {
 import { User } from '../models/user';
 
 export class AuthService {
-
   private user: User = null;
   private tokens: TokensDto = null;
   private loading = false;
@@ -19,10 +18,15 @@ export class AuthService {
     private utils: Utils,
     private storageService: StorageService,
     private http: HttpService
-  ) {
+  ) { }
+
+  public async init(baseUrl: string): Promise<void> {
+    Services.instance().setBaseUrl(baseUrl);
+
     const tokens = this.storageService.getTokens();
-    this.onAuthStateChanged(tokens);
+    await this.onAuthStateChanged(tokens);
   }
+
 
   private async onAuthStateChanged(tokens: TokensDto) {
     this.loading = true;
@@ -65,7 +69,7 @@ export class AuthService {
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
-      this.logout();
+      await this.logout();
       throw err;
     }
   }
@@ -77,19 +81,28 @@ export class AuthService {
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
-      this.logout();
+      await this.logout();
       throw err;
     }
   }
 
   public async getRefreshedToken(): Promise<string> {
-    try {
-      const tokens: TokensDto = await this.refreshTokens(this.tokens.refreshToken);
-      await this.onAuthStateChanged(tokens);
-      return this.tokens.token;
-    } catch (err) {
-      this.logout();
-      throw err;
+    if (this.loading) {
+      while (this.loading) { await this.sleep(50); }
+      if (this.tokens) { return this.tokens.token; }
+      else { throw new Error('Something went wrong'); }
+    } else {
+      this.loading = true;
+      try {
+        const tokens: TokensDto = await this.refreshTokens(this.tokens.refreshToken);
+        await this.onAuthStateChanged(tokens);
+        this.loading = false;
+        return this.tokens.token;
+      } catch (err) {
+        await this.logout();
+        this.loading = false;
+        throw err;
+      }
     }
   }
 
@@ -133,9 +146,5 @@ export class AuthService {
   public async logout(): Promise<void> {
     await this.http.post(this.getUserUrl('logout'), {});
     this.onAuthStateChanged(null);
-  }
-
-  public init(baseUrl: string) {
-    Services.instance().setBaseUrl(baseUrl);
   }
 }
