@@ -7,6 +7,7 @@ export interface RegisterDto {
   email: string;
   password: string;
   data: any;
+  emailTemplate?: string;
 }
 
 export interface TokensDto {
@@ -16,6 +17,7 @@ export interface TokensDto {
 
 export interface ForgotPasswordDto {
   email: string;
+  emailTemplate?: string;
 }
 
 export interface ResetPasswordDto {
