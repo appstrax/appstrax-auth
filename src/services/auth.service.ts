@@ -1,7 +1,7 @@
+import { FetchService, HttpVerb } from './fetch.service';
 import { Services } from './services';
 import { Utils } from './utils';
 import { StorageService } from './storage.service';
-import { HttpService } from './http.service';
 
 import {
   TokensDto, ForgotPasswordDto, LoginDto, RegisterDto,
@@ -17,55 +17,61 @@ export class AuthService {
   constructor(
     private utils: Utils,
     private storageService: StorageService,
-    private http: HttpService
   ) { }
 
   public async init(baseUrl: string): Promise<void> {
     Services.instance().setBaseUrl(baseUrl);
 
     const tokens = this.storageService.getTokens();
-    await this.onAuthStateChanged(tokens);
+    if (tokens) {
+      this.tokens = tokens;
+      await this.validateTokens();
+      this.onAuthStateChanged(this.tokens);
+    }
   }
 
+  private async validateTokens(): Promise<void> {
+    while (this.loading) { await this.utils.sleep(50); }
 
-  private async onAuthStateChanged(tokens: TokensDto) {
+    if (!this.tokens) { return; }
+
     this.loading = true;
-
-    // if the auth token has expired, try refresh the token
-    if (tokens && this.utils.isTokenExpired(tokens.token)) {
-      try {
-        tokens = await this.refreshTokens(tokens.refreshToken);
-      } catch (err) {
-        tokens = null;
+    if (this.utils.isTokenExpired(this.tokens.token)) {
+      if (this.utils.isTokenExpired(this.tokens.refreshToken)) {
+        await this.logout();
+      } else {
+        await this.refreshTokens();
       }
     }
-
-    this.tokens = tokens;
-    this.user = tokens ? this.utils.decodeToken(tokens.token) : null;
-    this.storageService.setTokens(tokens);
-
     this.loading = false;
   }
 
-  private refreshTokens(refreshToken: string): Promise<TokensDto> {
-    const url = this.getAuthUrl('refresh-token');
-    return this.http.post(url, { refreshToken });
+  private onAuthStateChanged(tokens: TokensDto) {
+    this.tokens = tokens;
+    this.user = tokens ? this.utils.decodeToken(tokens.token) : null;
+    this.storageService.setTokens(tokens);
   }
 
-  private getAuthUrl(extension: string): string {
-    const base = Services.instance().getBaseUrl();
-    return this.utils.pathJoin(base, 'api/auth', extension);
+  private async refreshTokens(): Promise<void> {
+    try {
+      const refreshToken = this.tokens.refreshToken;
+      const url = this.utils.getAuthUrl('refresh-token');
+
+      const tokens: TokensDto = await this.post(url, { refreshToken });
+
+      this.onAuthStateChanged(tokens);
+    } catch (err) {
+      await this.logout();
+    }
   }
 
-  private getUserUrl(extension: string): string {
-    const base = Services.instance().getBaseUrl();
-    return this.utils.pathJoin(base, 'api/user', extension);
-  }
 
   public async register(registerDto: RegisterDto): Promise<User> {
     try {
-      const url = this.getAuthUrl('register');
-      const tokens: TokensDto = await this.http.post(url, registerDto);
+      if (await this.isAuthenticated()) { await this.logout(); }
+
+      const url = this.utils.getAuthUrl('register');
+      const tokens: TokensDto = await this.post(url, registerDto);
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
@@ -76,8 +82,10 @@ export class AuthService {
 
   public async login(loginDto: LoginDto): Promise<User> {
     try {
-      const url = this.getAuthUrl('login');
-      const tokens: TokensDto = await this.http.post(url, loginDto);
+      if (await this.isAuthenticated()) { await this.logout(); }
+
+      const url = this.utils.getAuthUrl('login');
+      const tokens: TokensDto = await this.post(url, loginDto);
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
@@ -86,65 +94,66 @@ export class AuthService {
     }
   }
 
-  public async getRefreshedToken(): Promise<string> {
-    if (this.loading) {
-      while (this.loading) { await this.sleep(50); }
-      if (this.tokens) { return this.tokens.token; }
-      else { throw new Error('Something went wrong'); }
-    } else {
-      this.loading = true;
-      try {
-        const tokens: TokensDto = await this.refreshTokens(this.tokens.refreshToken);
-        await this.onAuthStateChanged(tokens);
-        this.loading = false;
-        return this.tokens.token;
-      } catch (err) {
-        await this.logout();
-        this.loading = false;
-        throw err;
-      }
-    }
-  }
-
   public forgotPassword(forgotDto: ForgotPasswordDto): Promise<MessageDto> {
-    return this.http.post(this.getAuthUrl('forgot-password'), forgotDto);
+    return this.post(this.utils.getAuthUrl('forgot-password'), forgotDto);
   }
 
   public resetPassword(resetDto: ResetPasswordDto): Promise<MessageDto> {
-    return this.http.post(this.getAuthUrl('reset-password'), resetDto);
+    return this.post(this.utils.getAuthUrl('reset-password'), resetDto);
   }
 
-  public async changePassword(changePassword: ChangePasswordDto): Promise<MessageDto> {
-    const url = this.getUserUrl('change-password');
-    return await this.http.post(url, changePassword);
+  public async changePassword(
+    changePasswordDto: ChangePasswordDto
+  ): Promise<MessageDto> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('Please login before changing password');
+    }
+
+    const url = this.utils.getUserUrl('change-password');
+    return await this.post(url, changePasswordDto, false);
   }
 
   public async saveUserData(data: any): Promise<User> {
-    const url = this.getUserUrl('data');
-    const tokens: TokensDto = await this.http.post(url, data);
-    await this.onAuthStateChanged(tokens);
+    if (!await this.isAuthenticated()) {
+      throw new Error('Please login before saving user data');
+    }
+
+    const url = this.utils.getUserUrl('data');
+    const tokens: TokensDto = await this.post(url, data, false);
+    this.onAuthStateChanged(tokens);
     return this.user;
   }
 
   public async isAuthenticated(): Promise<boolean> {
-    while (this.loading) { await this.sleep(50); }
+    await this.validateTokens();
     return this.user != null;
   }
 
-  private sleep(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
-  }
-
-  public getAuthToken(): string {
+  public async getAuthToken(): Promise<string> {
+    await this.validateTokens();
     return this.tokens ? this.tokens.token : null;
   }
 
-  public getUser(): User {
+  public async getUser(): Promise<User> {
+    await this.validateTokens();
     return this.user;
   }
 
   public async logout(): Promise<void> {
-    await this.http.post(this.getUserUrl('logout'), {});
+    await this.post(this.utils.getAuthUrl('logout'), {});
     this.onAuthStateChanged(null);
+  }
+
+  private post(
+    url: string,
+    body: any = {},
+    ignoreToken: boolean = true,
+  ): Promise<any> {
+    return FetchService.fetch({
+      url,
+      method: HttpVerb.POST,
+      body: body,
+      ignoreExpiredToken: ignoreToken,
+    });
   }
 }

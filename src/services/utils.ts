@@ -1,3 +1,4 @@
+import { Services } from './services';
 
 export class Utils {
 
@@ -61,5 +62,19 @@ export class Utils {
       .replace(replace, separator)
       .replace('http:/', 'http://')
       .replace('https:/', 'https://');
+  }
+
+  public getAuthUrl(extension: string): string {
+    const base = Services.instance().getBaseUrl();
+    return this.pathJoin(base, 'api/auth', extension);
+  }
+
+  public getUserUrl(extension: string): string {
+    const base = Services.instance().getBaseUrl();
+    return this.pathJoin(base, 'api/user', extension);
+  }
+
+  public sleep(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
 }
