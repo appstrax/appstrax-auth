@@ -147,7 +147,7 @@ export class AuthService {
   private post(
     url: string,
     body: any = {},
-    ignoreToken: boolean = true,
+    ignoreToken = true,
   ): Promise<any> {
     return FetchService.fetch({
       url,

@@ -20,10 +20,10 @@ export class FetchService {
 
   public static async fetch(payload: FetchPayload): Promise<any> {
 
-    let response = await this.doFetch(payload);
+    const response = await this.doFetch(payload);
 
-    let content = await this.getContent(response);
-    let status = response.status;
+    const content = await this.getContent(response);
+    const status = response.status;
 
     if (this.isSuccessful(status)) {
       return content;
@@ -94,7 +94,7 @@ export class FetchService {
 
     if (token) {
       headers['Authorization'] = 'Bearer ' + token
-    };
+    }
 
     return headers;
   }

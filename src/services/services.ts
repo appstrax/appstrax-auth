@@ -25,7 +25,7 @@ export class Services {
     this.utils = new Utils();
     this.storageService = new StorageService();
     this.httpService = new HttpService();
-    this.authService = new AuthService(this.utils, this.storageService, this.httpService);
+    this.authService = new AuthService(this.utils, this.storageService);
     this.userService = new UserService(this.utils, this.httpService);
   }
 
