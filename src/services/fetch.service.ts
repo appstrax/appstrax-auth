@@ -67,8 +67,8 @@ export class FetchService {
   }
 
   private static throwError(content: any, status: number): Promise<void> {
-    if (content) {
-      throw new HttpError(content, status)
+    if (content && content.message) {
+      throw new HttpError(content.message, status)
     }
 
     const err = `Something went wrong, 
