@@ -20,7 +20,14 @@ export class Utils {
     if (!decoded) {
       throw new Error('Cannot decode the token');
     }
-    return JSON.parse(decoded);
+    return this.deepFreeze(JSON.parse(decoded));
+  }
+
+  private deepFreeze(obj) {
+    Object.keys(obj).forEach(prop => {
+      if (typeof obj[prop] === 'object') this.deepFreeze(obj[prop]);
+    });
+    return Object.freeze(obj);
   }
 
   private urlBase64Decode(input: string) {
