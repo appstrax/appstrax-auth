@@ -25,7 +25,9 @@ export class Utils {
 
   private deepFreeze(obj) {
     Object.keys(obj).forEach(prop => {
-      if (typeof obj[prop] === 'object') this.deepFreeze(obj[prop]);
+      if (typeof obj[prop] === 'object' && obj[prop] !== null) {
+        this.deepFreeze(obj[prop]);
+      }
     });
     return Object.freeze(obj);
   }
