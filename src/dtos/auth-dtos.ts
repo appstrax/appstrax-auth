@@ -1,6 +1,10 @@
 export interface LoginDto {
   email: string;
   password: string;
+  /* 
+    set this to 'false' if you would not like the user token to auto refresh
+  */
+  remember?: boolean;
 }
 
 export interface RegisterDto {

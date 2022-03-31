@@ -4,6 +4,7 @@ export class StorageService {
 
   private authTokenKey = 'APPSTRAX_AUTH_TOKEN';
   private refreshTokenKey = 'APPSTRAX_REFRESH_TOKEN';
+  private canRefreshTokenKey = 'APPSTRAX_CAN_REFRESH_TOKEN';
 
   private getItem(key: string): string {
     try {
@@ -21,10 +22,11 @@ export class StorageService {
     }
   }
 
-  private clearTokens() {
+  public clear() {
     try {
       localStorage.removeItem(this.authTokenKey);
       localStorage.removeItem(this.refreshTokenKey);
+      localStorage.removeItem(this.canRefreshTokenKey);
     } catch (e) {
       // TODO handle err
     }
@@ -46,7 +48,12 @@ export class StorageService {
     }
   }
 
-  public clear() {
-    this.clearTokens();
+  public canRefreshToken(): boolean {
+    const value = this.getItem(this.canRefreshTokenKey);
+    return value !== 'false';
+  }
+
+  public setCanRefreshToken(value: boolean) {
+    this.setItem(this.canRefreshTokenKey, value + '');
   }
 }

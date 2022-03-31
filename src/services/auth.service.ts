@@ -40,7 +40,11 @@ export class AuthService {
       if (this.utils.isTokenExpired(this.tokens.refreshToken)) {
         await this.logout();
       } else {
-        await this.refreshTokens();
+        if (this.storageService.canRefreshToken()) {
+          await this.refreshTokens();
+        } else {
+          await this.logout();
+        }
       }
     }
     this.loading = false;
@@ -86,6 +90,7 @@ export class AuthService {
 
       const url = this.utils.getAuthUrl('login');
       const tokens: TokensDto = await this.post(url, loginDto);
+      this.storageService.setCanRefreshToken(loginDto.remember ?? true);
       await this.onAuthStateChanged(tokens);
       return this.user;
     } catch (err) {
