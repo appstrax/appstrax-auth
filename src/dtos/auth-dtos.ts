@@ -19,6 +19,11 @@ export interface TokensDto {
   refreshToken: string;
 }
 
+export interface TwoFactorAuthDto {
+  tokens: TokensDto;
+  secret: string;
+}
+
 export interface ForgotPasswordDto {
   email: string;
   emailTemplate?: string;

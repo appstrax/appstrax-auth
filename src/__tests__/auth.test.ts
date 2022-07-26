@@ -1,7 +1,18 @@
-const myTest = () => { return 'test'};
+import { auth } from '../index';
 
-test('test', () => {
-  expect(myTest()).toBe('test');
+// const testUrl = 'https://auth-v2-bbenwg.codecapsules.co.za/';
+// auth.init(testUrl);
+
+// test('login', async () => {
+//   const result = await auth.login({
+//     email: 'jacques@appstrax.tech',
+//     password: 'qwerty'
+//   });
+
+//   expect(result.user).toBeTruthy();
+// });
+
+
+test('default', () => {
+  expect(true).toBeTruthy();
 });
-
-

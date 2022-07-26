@@ -5,9 +5,10 @@ import { StorageService } from './storage.service';
 
 import {
   TokensDto, ForgotPasswordDto, LoginDto, RegisterDto,
-  ResetPasswordDto, MessageDto, ChangePasswordDto
+  ResetPasswordDto, MessageDto, ChangePasswordDto, TwoFactorAuthDto
 } from '../dtos/auth-dtos';
 import { User } from '../models/user';
+import { AuthResult, AuthStatus } from './../models/auth_result';
 
 export class AuthService {
   private user: User = null;
@@ -37,23 +38,38 @@ export class AuthService {
 
     this.loading = true;
     if (this.utils.isTokenExpired(this.tokens.token)) {
-      if (this.utils.isTokenExpired(this.tokens.refreshToken)) {
-        await this.logout();
+
+      if (this.canRefreshTokens()) {
+        await this.refreshTokens();
       } else {
-        if (this.storageService.canRefreshToken()) {
-          await this.refreshTokens();
-        } else {
-          await this.logout();
-        }
+        await this.logout();
       }
+
     }
     this.loading = false;
   }
 
+  private async canRefreshTokens() {
+    return this.storageService.canRefreshToken() &&
+      this.tokens.refreshToken &&
+      !this.utils.isTokenExpired(this.tokens.refreshToken);
+  }
+
   private onAuthStateChanged(tokens: TokensDto) {
     this.tokens = tokens;
-    this.user = tokens ? this.utils.decodeToken(tokens.token) : null;
     this.storageService.setTokens(tokens);
+    if (tokens) {
+      const decoded = this.utils.decodeToken(tokens.token);
+      // only set the user if we have an id in the token.
+      // IE. we have a user
+      if (decoded.id) {
+        this.user = decoded;
+      } else {
+        this.user = null;
+      }
+    } else {
+      this.user = null;
+    }
   }
 
   private async refreshTokens(): Promise<void> {
@@ -70,29 +86,51 @@ export class AuthService {
   }
 
 
-  public async register(registerDto: RegisterDto): Promise<User> {
+  public async register(registerDto: RegisterDto): Promise<AuthResult> {
     try {
       if (await this.isAuthenticated()) { await this.logout(); }
 
       const url = this.utils.getAuthUrl('register');
       const tokens: TokensDto = await this.post(url, registerDto);
+
       await this.onAuthStateChanged(tokens);
-      return this.user;
+
+      return AuthResult.authenticated(this.user);
     } catch (err) {
       await this.logout();
       throw err;
     }
   }
 
-  public async login(loginDto: LoginDto): Promise<User> {
+  public async login(loginDto: LoginDto): Promise<AuthResult> {
     try {
       if (await this.isAuthenticated()) { await this.logout(); }
 
       const url = this.utils.getAuthUrl('login');
       const tokens: TokensDto = await this.post(url, loginDto);
+
       this.storageService.setCanRefreshToken(loginDto.remember ?? true);
       await this.onAuthStateChanged(tokens);
-      return this.user;
+
+      if (this.user) {
+        return AuthResult.authenticated(this.user);
+      } else if (this.tokens) {
+        return AuthResult.requireTwoFactorAuthCode();
+      }
+    } catch (err) {
+      await this.logout();
+      throw err;
+    }
+  }
+
+  public async verifyTwoFactorAuthCode(code: string): Promise<User> {
+    try {
+      if (this.tokens && !this.user) { await this.logout(); }
+
+      const url = this.utils.getAuthUrl('verify-2fa');
+      const tokens: TokensDto = await this.post(url, { code }, false);
+      await this.onAuthStateChanged(tokens);
+      return this.user as User;
     } catch (err) {
       await this.logout();
       throw err;
@@ -111,7 +149,7 @@ export class AuthService {
     changePasswordDto: ChangePasswordDto
   ): Promise<MessageDto> {
     if (!await this.isAuthenticated()) {
-      throw new Error('Please login before changing password');
+      throw new Error('User not authenticated');
     }
 
     const url = this.utils.getUserUrl('change-password');
@@ -120,7 +158,7 @@ export class AuthService {
 
   public async saveUserData(data: any): Promise<User> {
     if (!await this.isAuthenticated()) {
-      throw new Error('Please login before saving user data');
+      throw new Error('User not authenticated');
     }
 
     const url = this.utils.getUserUrl('data');
@@ -128,6 +166,51 @@ export class AuthService {
     this.onAuthStateChanged(tokens);
     return this.user;
   }
+
+  public async sendEmailVerificationCode(): Promise<void> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('User not authenticated');
+    }
+
+    const url = this.utils.getUserUrl('send-verification-email');
+    await this.post(url, {}, false);
+  }
+
+  public async verifyEmailAddress(code: string): Promise<User> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('User not authenticated');
+    }
+
+    const url = this.utils.getUserUrl('verify-email');
+    const tokens: TokensDto = await this.post(url, { code }, false);
+    this.onAuthStateChanged(tokens);
+    return this.user;
+  }
+
+
+  public async enableTwoFactorAuthentication(): Promise<{ secret: string }> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('User not authenticated');
+    }
+
+    const url = this.utils.getUserUrl('enable-2fa');
+    const response: TwoFactorAuthDto = await this.post(url, {}, false);
+
+    this.onAuthStateChanged(response.tokens);
+    return { secret: response.secret };
+  }
+
+  public async disableTwoFactorAuthentication(): Promise<User> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('User not authenticated');
+    }
+
+    const url = this.utils.getUserUrl('disable-2fa');
+    const tokens: TokensDto = await this.post(url, {}, false);
+    this.onAuthStateChanged(tokens);
+    return this.user;
+  }
+
 
   public async isAuthenticated(): Promise<boolean> {
     await this.validateTokens();
@@ -142,6 +225,13 @@ export class AuthService {
   public async getUser(): Promise<User> {
     await this.validateTokens();
     return this.user;
+  }
+
+  public async getAuthStatus(): Promise<AuthStatus> {
+    await this.validateTokens();
+    if (this.user) { return AuthStatus.authenticated; }
+    if (this.tokens && !this.user) { return AuthStatus.pendingTwoFactorAuthCode; }
+    return AuthStatus.notAuthenticated;
   }
 
   public async logout(): Promise<void> {

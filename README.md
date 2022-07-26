@@ -41,8 +41,8 @@ const registerDto: RegisterDto = {
   }
 };
 
-auth.register(registerDto).then((user: User) => {
-  console.log(user);
+auth.register(registerDto).then((res: AuthResult) => {
+  console.log(res.user);
 }).catch(err => {
   console.log(err.message);
 });
@@ -58,8 +58,9 @@ const loginDto: LoginDto = {
   password: "<password>"
 };
 
-auth.login(loginDto).then((user: User) => {
-  console.log(user);
+auth.login(loginDto).then((res: AuthResult) => {
+  console.log(res.status);
+  console.log(res.user);
 }).catch(err => {
   console.log(err.message);
 });
@@ -146,3 +147,25 @@ auth.saveUserData(data).then((user: User) => {
 ```
 
 Users can only update their data if they are already authenticated.
+
+## Error Messages
+```javascript
+enum AuthErrors {
+  // registration errors
+  emailAddressAlreadyExists = 'emailAddressAlreadyExists',
+  badlyFormattedEmailAddress = 'badlyFormattedEmailAddress',
+  noPasswordSupplied = 'noPasswordSupplied',
+
+  // login errors
+  invalidEmailOrPassword = 'invalidEmailOrPassword',
+  userBlocked = 'userBlocked',
+  invalidTwoFactorAuthCode = 'invalidTwoFactorAuthCode',
+
+  // forgot/reset password errors
+  emailAddressDoesNotExist = 'emailAddressDoesNotExist',
+  invalidResetCode = 'invalidResetCode',
+
+  // unknown errors
+  unexpectedError = 'unexpectedError',
+}
+```
