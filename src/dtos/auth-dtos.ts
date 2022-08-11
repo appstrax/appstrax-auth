@@ -22,6 +22,7 @@ export interface TokensDto {
 export interface TwoFactorAuthDto {
   tokens: TokensDto;
   secret: string;
+  qr: string;
 }
 
 export interface ForgotPasswordDto {

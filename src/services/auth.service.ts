@@ -124,17 +124,18 @@ export class AuthService {
   }
 
   public async verifyTwoFactorAuthCode(code: string): Promise<User> {
-    try {
-      if (this.tokens && !this.user) { await this.logout(); }
-
-      const url = this.utils.getAuthUrl('verify-2fa');
-      const tokens: TokensDto = await this.post(url, { code }, false);
-      await this.onAuthStateChanged(tokens);
-      return this.user as User;
-    } catch (err) {
+    if (this.utils.isTokenExpired(this.tokens.token)) {
       await this.logout();
-      throw err;
+      throw new Error('Your token has expired');
     }
+    if (this.tokens && this.user) {
+      throw new Error('User already authenticated');
+    }
+
+    const url = this.utils.getAuthUrl('verify-2fa');
+    const tokens: TokensDto = await this.post(url, { code }, false);
+    await this.onAuthStateChanged(tokens);
+    return this.user as User;
   }
 
   public forgotPassword(forgotDto: ForgotPasswordDto): Promise<MessageDto> {
@@ -187,17 +188,35 @@ export class AuthService {
     return this.user;
   }
 
+  public async generateTwoFactorAuthSecret(): Promise<{
+    secret: string,
+    qrCode: string,
+  }> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('User not authenticated');
+    }
 
-  public async enableTwoFactorAuthentication(): Promise<{ secret: string }> {
+    const url = this.utils.getUserUrl('generate-2fa-secret');
+    const response: TwoFactorAuthDto = await this.post(url, {}, false);
+
+    this.onAuthStateChanged(response.tokens);
+
+    return {
+      secret: response.secret,
+      qrCode: response.qr,
+    };
+  }
+
+  public async enableTwoFactorAuth(code: string): Promise<User> {
     if (!await this.isAuthenticated()) {
       throw new Error('User not authenticated');
     }
 
     const url = this.utils.getUserUrl('enable-2fa');
-    const response: TwoFactorAuthDto = await this.post(url, {}, false);
+    const tokens: TokensDto = await this.post(url, { code }, false);
+    this.onAuthStateChanged(tokens);
 
-    this.onAuthStateChanged(response.tokens);
-    return { secret: response.secret };
+    return this.user;
   }
 
   public async disableTwoFactorAuthentication(): Promise<User> {

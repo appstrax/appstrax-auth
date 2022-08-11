@@ -1,8 +1,15 @@
 import { Model } from './model';
 
-interface TwoFactorAuth {
+
+export enum TwoFactorAuthStatus {
+  disabled = 'disabled',
+  enabled = 'enabled',
+  pending = 'pending',
+}
+
+export interface TwoFactorAuth {
   type: string;
-  enabled: boolean;
+  status: TwoFactorAuthStatus;
 }
 
 export class User extends Model {
@@ -11,7 +18,7 @@ export class User extends Model {
   verified: boolean = false;
   twoFactorAuth: TwoFactorAuth = {
     type: '',
-    enabled: false,
+    status: TwoFactorAuthStatus.disabled,
   };
   data: any = {};
 }
