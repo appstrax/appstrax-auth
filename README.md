@@ -169,3 +169,32 @@ enum AuthErrors {
   unexpectedError = 'unexpectedError',
 }
 ```
+
+
+## Find Users
+
+// check public availability
+
+// show query options // where / order limit, offet
+
+// show operations
+
+// examples
+
+```javascript
+import { auth } from '@appstrax/auth';
+
+const data: any = {
+  // any additional/custom user fields
+  name: "Joe",
+  surname: "Soap",
+  fancy: "field",
+  ...
+}
+
+auth.saveUserData(data).then((user: User) => {
+  console.log(user);
+}).catch(err => {
+  console.log(err.message);
+});
+```

@@ -3,6 +3,15 @@ import { Utils } from './utils';
 import { HttpService } from './http.service';
 
 import { User } from '../models/user';
+import { FindResultDto } from '../dtos';
+import { Where, Order } from '..';
+
+export interface FetchQuery {
+  where?: Where;
+  order?: Order;
+  offset?: number;
+  limit?: number;
+}
 
 export class UserService {
 
@@ -16,18 +25,21 @@ export class UserService {
     return this.utils.pathJoin(base, 'api/user', extension);
   }
 
-  public async find(where?: any): Promise<User[]> {
-    let queryParam = '';
-
-    if (where) {
-      queryParam = '?';
-      const keys = Object.keys(where);
-      for (const key of keys) {
-        const value = where[key];
-        queryParam += `${key}=${value}&`;
-      }
+  public async find(query?: FetchQuery): Promise<FindResultDto<User>> {
+    const queryParams: any = {};
+    if (query?.where) {
+      queryParams.where = JSON.stringify(query.where);
+    }
+    if (query?.order) {
+      queryParams.order = JSON.stringify(query.order);
+    }
+    if (query?.offset || query?.limit) {
+      queryParams.offset = query.offset;
+      queryParams.limit = query.limit;
     }
 
-    return this.http.get(this.getUrl(queryParam));
+    const params = new URLSearchParams(queryParams);
+
+    return this.http.get(this.getUrl('?' + params));
   }
 }

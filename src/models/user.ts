@@ -1,6 +1,5 @@
 import { Model } from './model';
 
-
 export enum TwoFactorAuthStatus {
   disabled = 'disabled',
   enabled = 'enabled',

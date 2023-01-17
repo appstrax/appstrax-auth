@@ -16,6 +16,8 @@ const auth = services.authService;
 const http = services.httpService;
 const users = services.userService;
 
+export * from './models/query';
+
 export {
   LoginDto,
   RegisterDto,
