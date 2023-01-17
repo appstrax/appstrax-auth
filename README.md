@@ -173,28 +173,120 @@ enum AuthErrors {
 
 ## Find Users
 
-// check public availability
+## Public Availability
 
-// show query options // where / order limit, offet
+Admin Panel -> Configuration tab -> Public Access -> toggle 'Allow Public Access'
 
-// show operations
+## Querying Users
 
-// examples
+The find() function takes FetchQuery as an argument
 
 ```javascript
-import { auth } from '@appstrax/auth';
-
-const data: any = {
-  // any additional/custom user fields
-  name: "Joe",
-  surname: "Soap",
-  fancy: "field",
-  ...
+export interface FetchQuery {
+  // Conditions to query data
+  where?: Where;
+  // ASC, DESC Order
+  order?: Order;
+  // Pagination variables
+  offset?: number;
+  limit?: number;
 }
 
-auth.saveUserData(data).then((user: User) => {
-  console.log(user);
-}).catch(err => {
-  console.log(err.message);
-});
+export interface Where {
+  [key: string | Operator]: object | Operator | [] | number | string | boolean;
+}
+
+export enum OrderDirection {
+  // Ascending Order Direction
+  ASC = 'ASC',
+  // Descending Order Direction
+  DESC = 'DESC',
+}
 ```
+
+## Available Operators
+
+```javascript
+export enum Operator {
+  // Equal To Operator
+  EQUAL = 'EQUAL',
+  // Not Equal To Operator
+  NOT_EQUAL = 'NOT_EQUAL',
+  // And Operator
+  AND = 'AND',
+  // Or Operator
+  OR = 'OR',
+  // Greater Than Operator
+  GT = 'GT',
+  // Greater Than or Equal To Operator
+  GTE = 'GTE',
+  // Less Than Operator
+  LT = 'LT',
+  // Less Than or Equal To Operator
+  LTE = 'LTE',
+  // Like Operator
+  LIKE = 'LIKE',
+  // Not Like Operator
+  NOT_LIKE = 'NOT_LIKE',
+  // In Operator
+  IN = 'IN',
+}
+```
+
+## Add your FetchQuery to the url as queryParams
+- {baseUrl}/user?where={}&order={}&offset=0&limit=5
+
+## Examples
+
+A query to search for Users:  
+Where -> email is 'LIKE' 'Joe'  
+Ascending, ordered by email  
+Return the first 5 
+
+```javascript
+import { users } from '@appstrax/auth';
+
+users.find({
+  // where: {"email":{"LIKE":"Joe"}}
+  where: { email: { [Operator.LIKE]: this.search } },
+  // order: {"email": "ASC"}
+  order: {},
+  offset: 0,
+  limit: 5,
+});
+
+this.totalUsers = result.count;
+this.userData = result.data;
+```
+
+A query to search for Users:  
+Where -> email is 'LIKE' 'Joe'  
+'OR'  
+name is 'LIKE' 'Joe'  
+'OR'  
+surname is 'LIKE' 'Joe'  
+No order  
+Return the first 5
+
+```javascript
+import { users } from '@appstrax/auth';
+
+users.find({
+  // where: {"OR":[{"email":{"LIKE":"cam"}},{"name":{"LIKE":"cam"}},{"surname":{"LIKE":"cam"}}]}
+  where: {
+    [Operator.OR]: [
+      { email: { [Operator.LIKE]: this.search } },
+      { name: { [Operator.LIKE]: this.search } },
+      { surname: { [Operator.LIKE]: this.search } },
+    ],
+  },
+  // order: {"email":"ASC"}
+  order: {"email": OrderDirection.ASC},
+  offset: 0,
+  limit: 5,
+});
+
+this.totalUsers = result.count;
+this.userData = result.data;
+```
+
