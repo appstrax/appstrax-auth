@@ -171,18 +171,29 @@ enum AuthErrors {
 ```
 
 
-## Find Users
+## Fetch Users
 
-## Public Availability
+### Public Availability
+By default the Auth API restricts public access to fetching other users (users other than the currently authenticated user).
 
-Admin Panel -> Configuration tab -> Public Access -> toggle 'Allow Public Access'
+In order to activate public access to fetch users, in the administrative panel click on the following:
+ - Configuration tab 
+ - Public Access 
+ - Toggle 'Allow Public Access'
 
-## Querying Users
 
-The find() function takes FetchQuery as an argument
+### Querying Users
+You can query other users with the `UserService`.
 
-```javascript
-export interface FetchQuery {
+```typescript
+import { users } from '@appstrax/auth';
+```
+
+Use the `find()` function on `users` (the UserService) to query/fetch other users.
+The `find()` function takes a `FetchQuery` as an argument:
+
+```typescript
+interface FetchQuery {
   // Conditions to query data
   where?: Where;
   // ASC, DESC Order
@@ -191,23 +202,34 @@ export interface FetchQuery {
   offset?: number;
   limit?: number;
 }
+```
+the `where` field in a `FetchQuery` should be made up as follows:
 
-export interface Where {
-  [key: string | Operator]: object | Operator | [] | number | string | boolean;
-}
-
-export enum OrderDirection {
-  // Ascending Order Direction
-  ASC = 'ASC',
-  // Descending Order Direction
-  DESC = 'DESC',
+```typescript
+{
+ where: {
+    [Operator.AND]: [{ a: 5 }, { b: 6 }],  // (a = 5) AND (b = 6)
+    [Operator.OR]: [{ a: 5 }, { b: 6 }],   // (a = 5) OR (b = 6)
+    <someAttribute>: {
+      [Operator.EQUAL]: 3,                 // = 3
+      [Operator.NOT_EQUAL]: 20,            // != 20
+      [Operator.OR]: [5, 6],               // (someAttribute = 5) OR (someAttribute = 6)
+      [Operator.GT]: 6,                    // > 6
+      [Operator.GTE]: 6,                   // >= 6
+      [Operator.LT]: 10,                   // < 10
+      [Operator.LTE]: 10,                  // <= 10
+      [Operator.IN]: [1, 2],               // IN [1, 2]
+      [Operator.LIKE]: 'hat',              // LIKE 'hat'
+      [Operator.NOT_LIKE]: 'hat',          // NOT LIKE 'hat'
+    }
+  }
 }
 ```
 
-## Available Operators
+### Available Operators
 
-```javascript
-export enum Operator {
+```typescript
+enum Operator {
   // Equal To Operator
   EQUAL = 'EQUAL',
   // Not Equal To Operator
@@ -233,60 +255,70 @@ export enum Operator {
 }
 ```
 
-## Add your FetchQuery to the url as queryParams
-- {baseUrl}/user?where={}&order={}&offset=0&limit=5
+
 
 ## Examples
 
-A query to search for Users:  
-Where -> email is 'LIKE' 'Joe'  
-Ascending, ordered by email  
+A query to search for Users: 
+
+WHERE
+- `email` is 'LIKE' 'Joe'  
+
+ORDER BY  
+- `email` ascending
+
 Return the first 5 
 
-```javascript
-import { users } from '@appstrax/auth';
+```typescript
+import { users, Operator, OrderDirection  } from '@appstrax/auth';
 
-users.find({
-  // where: {"email":{"LIKE":"Joe"}}
-  where: { email: { [Operator.LIKE]: this.search } },
-  // order: {"email": "ASC"}
-  order: {},
+...
+
+let search = 'Joe';
+
+const result = await users.find({
+  where: { email: { [Operator.LIKE]: search } },
+  order: { email: OrderDirection.ASC },
   offset: 0,
   limit: 5,
 });
 
-this.totalUsers = result.count;
-this.userData = result.data;
+const totalUsers = result.count;
+const fetchedUsers = result.data;
 ```
 
 A query to search for Users:  
-Where -> email is 'LIKE' 'Joe'  
-'OR'  
-name is 'LIKE' 'Joe'  
-'OR'  
-surname is 'LIKE' 'Joe'  
+
+WHERE
+- `email` is 'LIKE' 'Joe'
+- 'OR' `name` is 'LIKE' 'Joe'  
+- 'OR' `surname` is 'LIKE' 'Joe'  
+  
 No order  
-Return the first 5
 
-```javascript
-import { users } from '@appstrax/auth';
+RETURN
+- elements 6 to 10
 
-users.find({
-  // where: {"OR":[{"email":{"LIKE":"cam"}},{"name":{"LIKE":"cam"}},{"surname":{"LIKE":"cam"}}]}
+```typescript
+import { users, Operator } from '@appstrax/auth';
+
+...
+
+let search = 'Joe';
+
+const result = await users.find({
   where: {
     [Operator.OR]: [
-      { email: { [Operator.LIKE]: this.search } },
-      { name: { [Operator.LIKE]: this.search } },
-      { surname: { [Operator.LIKE]: this.search } },
+      { email: { [Operator.LIKE]: search } },
+      { name: { [Operator.LIKE]: search } },
+      { surname: { [Operator.LIKE]: search } },
     ],
   },
-  // order: {"email":"ASC"}
-  order: {"email": OrderDirection.ASC},
-  offset: 0,
+  offset: 1,
   limit: 5,
 });
 
-this.totalUsers = result.count;
-this.userData = result.data;
+const totalUsers = result.count;
+const fetchedUsers = result.data;
 ```
 
